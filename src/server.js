@@ -18,7 +18,10 @@ connectDB();
 const app = express();
 app.use(
   cors({
-    origin: ['http://localhost:5173', 'https://YOUR_VERCEL_APP.vercel.app'],
+    origin: [
+      'http://localhost:5173',
+      'https://vercel.com/santhoshs-projects-0708f771/medi-connect-frontend/BApfnS1Wrp3kCC5H1WCNeagmFMYe',
+    ],
     credentials: true,
   })
 );
