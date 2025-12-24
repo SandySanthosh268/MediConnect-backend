@@ -14,7 +14,15 @@ import reviewRoutes from './routes/reviewRoutes.js';
 dotenv.config();
 connectDB();
 
+
 const app = express();
+app.use(
+  cors({
+    origin: ['http://localhost:5173', 'https://YOUR_VERCEL_APP.vercel.app'],
+    credentials: true,
+  })
+);
+
 app.use(cors());
 app.use(express.json());
 app.use('/api/auth', authRoutes);
