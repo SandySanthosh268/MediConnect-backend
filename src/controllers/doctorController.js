@@ -1,14 +1,26 @@
+import Doctor from '../models/Doctor.js';
 import User from '../models/User.js';
 
 /* ================= GET ALL APPROVED DOCTORS ================= */
 export const getApprovedDoctors = async (req, res) => {
   try {
-    const doctors = await User.find({
-      role: 'DOCTOR',
-      isApproved: true,
-    }).select('name email phone location specialization experience rating isAvailable');
+    const doctors = await Doctor.find({ isApproved: true })
+      .populate('user', 'name email') // basic user info
+      .select('specialization experience rating isAvailable clinicAddress qualifications');
 
-    res.json(doctors);
+    const formatted = doctors.map((doc) => ({
+      _id: doc._id,
+      name: doc.user.name,
+      email: doc.user.email,
+      specialization: doc.specialization,
+      experience: doc.experience,
+      rating: doc.rating,
+      isAvailable: doc.isAvailable,
+      location: doc.clinicAddress,
+      qualifications: doc.qualifications,
+    }));
+
+    res.json(formatted);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -21,15 +33,25 @@ export const getDoctorProfile = async (req, res) => {
       return res.status(403).json({ message: 'Doctor access only' });
     }
 
-    const doctor = await User.findById(req.user.id).select(
-      'name email phone location specialization experience bio qualifications isAvailable'
-    );
+    const doctor = await Doctor.findOne({ user: req.user.id }).populate('user', 'name email');
 
     if (!doctor) {
-      return res.status(404).json({ message: 'Doctor not found' });
+      return res.status(404).json({ message: 'Doctor profile not found' });
     }
 
-    res.json(doctor);
+    res.json({
+      id: doctor._id,
+      name: doctor.user.name,
+      email: doctor.user.email,
+      specialization: doctor.specialization,
+      experience: doctor.experience,
+      bio: doctor.bio,
+      qualifications: doctor.qualifications,
+      isAvailable: doctor.isAvailable,
+      location: doctor.clinicAddress,
+      rating: doctor.rating,
+      isApproved: doctor.isApproved,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -38,19 +60,27 @@ export const getDoctorProfile = async (req, res) => {
 /* ================= GET SINGLE DOCTOR PROFILE ================= */
 export const getDoctorById = async (req, res) => {
   try {
-    const doctor = await User.findOne({
+    const doctor = await Doctor.findOne({
       _id: req.params.id,
-      role: 'DOCTOR',
       isApproved: true,
-    }).select(
-      'name email phone location specialization experience rating isAvailable bio qualifications'
-    );
+    }).populate('user', 'name email');
 
     if (!doctor) {
       return res.status(404).json({ message: 'Doctor not found' });
     }
 
-    res.json(doctor);
+    res.json({
+      id: doctor._id,
+      name: doctor.user.name,
+      email: doctor.user.email,
+      specialization: doctor.specialization,
+      experience: doctor.experience,
+      rating: doctor.rating,
+      isAvailable: doctor.isAvailable,
+      bio: doctor.bio,
+      qualifications: doctor.qualifications,
+      location: doctor.clinicAddress,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -63,23 +93,23 @@ export const updateDoctorProfile = async (req, res) => {
       return res.status(403).json({ message: 'Doctor access only' });
     }
 
-    const doctor = await User.findById(req.user.id);
+    const doctor = await Doctor.findOne({ user: req.user.id });
 
     if (!doctor) {
-      return res.status(404).json({ message: 'Doctor not found' });
+      return res.status(404).json({ message: 'Doctor profile not found' });
     }
 
-    const { name, specialization, experience, isAvailable, bio, qualifications, phone, location } =
-      req.body;
+    const { specialization, experience, isAvailable, bio, qualifications, location } = req.body;
 
-    if (name !== undefined) doctor.name = name;
     if (specialization !== undefined) doctor.specialization = specialization;
     if (experience !== undefined) doctor.experience = experience;
     if (isAvailable !== undefined) doctor.isAvailable = isAvailable;
     if (bio !== undefined) doctor.bio = bio;
-    if (qualifications !== undefined) doctor.qualifications = qualifications;
-    if (phone !== undefined) doctor.phone = phone;
-    if (location !== undefined) doctor.location = location;
+    if (qualifications !== undefined)
+      doctor.qualifications = Array.isArray(qualifications)
+        ? qualifications
+        : qualifications.split(',').map((q) => q.trim());
+    if (location !== undefined) doctor.clinicAddress = location;
 
     await doctor.save();
 

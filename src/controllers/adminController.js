@@ -1,9 +1,11 @@
 import User from '../models/User.js';
+import Doctor from '../models/Doctor.js';
 
 /* ================= GET ALL USERS ================= */
 export const getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select('-password');
+
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -13,12 +15,21 @@ export const getAllUsers = async (req, res) => {
 /* ================= GET PENDING DOCTORS ================= */
 export const getPendingDoctors = async (req, res) => {
   try {
-    const doctors = await User.find({
-      role: 'DOCTOR',
-      isApproved: false,
-    }).select('-password');
+    const doctors = await Doctor.find({ isApproved: false })
+      .populate('user', 'name email')
+      .select('specialization experience isApproved createdAt');
 
-    res.json(doctors);
+    const formatted = doctors.map((doc) => ({
+      id: doc._id,
+      name: doc.user.name,
+      email: doc.user.email,
+      specialization: doc.specialization,
+      experience: doc.experience,
+      isApproved: doc.isApproved,
+      registeredAt: doc.createdAt,
+    }));
+
+    res.json(formatted);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -29,8 +40,9 @@ export const updateDoctorStatus = async (req, res) => {
   try {
     const { approved } = req.query;
 
-    const doctor = await User.findById(req.params.id);
-    if (!doctor || doctor.role !== 'DOCTOR') {
+    const doctor = await Doctor.findById(req.params.id).populate('user', 'name email');
+
+    if (!doctor) {
       return res.status(404).json({ message: 'Doctor not found' });
     }
 
@@ -38,11 +50,11 @@ export const updateDoctorStatus = async (req, res) => {
     await doctor.save();
 
     res.json({
-      message: `Doctor ${approved === 'true' ? 'approved' : 'rejected'}`,
+      message: `Doctor ${approved === 'true' ? 'approved' : 'rejected'} successfully`,
       doctor: {
         id: doctor._id,
-        name: doctor.name,
-        email: doctor.email,
+        name: doctor.user.name,
+        email: doctor.user.email,
         isApproved: doctor.isApproved,
       },
     });
