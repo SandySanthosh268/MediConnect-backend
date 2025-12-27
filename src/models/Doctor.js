@@ -12,20 +12,30 @@ const doctorSchema = new mongoose.Schema(
     specialization: {
       type: String,
       required: true,
+      trim: true,
     },
 
     experience: {
       type: Number,
       default: 1,
+      min: 0,
     },
 
-    qualifications: [String],
+    qualifications: {
+      type: [String],
+      default: [],
+    },
 
-    bio: String,
+    bio: {
+      type: String,
+      default: '',
+    },
 
     rating: {
       type: Number,
       default: 4,
+      min: 0,
+      max: 5,
     },
 
     isAvailable: {
@@ -38,7 +48,18 @@ const doctorSchema = new mongoose.Schema(
       default: false,
     },
 
-    clinicAddress: String,
+    location: {
+      city: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+      state: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+    },
   },
   { timestamps: true }
 );

@@ -4,19 +4,18 @@ import {
   getPatientAppointments,
   getDoctorAppointments,
   updateAppointmentStatus,
-  cancelAppointment
+  cancelAppointment,
 } from '../controllers/appointmentController.js';
-
 import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-/* Patient */
+/* PATIENT */
 router.post('/', protect, createAppointment);
 router.get('/patient', protect, getPatientAppointments);
-router.delete('/:id', protect, cancelAppointment);
+router.put('/:id/cancel', protect, cancelAppointment);
 
-/* Doctor */
+/* DOCTOR */
 router.get('/doctor', protect, getDoctorAppointments);
 router.put('/:id/status', protect, updateAppointmentStatus);
 

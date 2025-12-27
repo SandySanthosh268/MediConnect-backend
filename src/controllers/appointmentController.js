@@ -1,17 +1,18 @@
 import Appointment from '../models/Appointment.js';
 import Patient from '../models/Patient.js';
 import Doctor from '../models/Doctor.js';
-// import Appointment from '../models/Appointment.js';
-// import Patient from '../models/Patient.js';
 
 /* ================= CREATE APPOINTMENT (PATIENT) ================= */
 export const createAppointment = async (req, res) => {
   try {
-    const { doctorId, date } = req.body;
-
-    /* 🔹 Get logged-in patient */
     if (req.user.role !== 'PATIENT') {
       return res.status(403).json({ message: 'Patient access only' });
+    }
+
+    const { doctorId, date } = req.body;
+
+    if (new Date(date) < new Date()) {
+      return res.status(400).json({ message: 'Appointment date must be in the future' });
     }
 
     const patient = await Patient.findOne({ user: req.user.id });
@@ -19,17 +20,16 @@ export const createAppointment = async (req, res) => {
       return res.status(404).json({ message: 'Patient profile not found' });
     }
 
-    /* 🔹 Validate doctor */
     const doctor = await Doctor.findById(doctorId);
     if (!doctor || !doctor.isApproved) {
       return res.status(400).json({ message: 'Invalid or unapproved doctor' });
     }
 
-    /* 🔹 Create appointment */
     const appointment = await Appointment.create({
       patient: patient._id,
       doctor: doctor._id,
       date,
+      status: 'PENDING',
     });
 
     res.status(201).json({
@@ -41,31 +41,22 @@ export const createAppointment = async (req, res) => {
   }
 };
 
-
 /* ================= PATIENT APPOINTMENTS ================= */
 export const getPatientAppointments = async (req, res) => {
   try {
-    /* 🔐 Role check */
     if (req.user.role !== 'PATIENT') {
       return res.status(403).json({ message: 'Patient access only' });
     }
 
-    /* 👤 Find patient profile */
     const patient = await Patient.findOne({ user: req.user.id });
     if (!patient) {
       return res.status(404).json({ message: 'Patient profile not found' });
     }
 
-    /* 📅 Fetch appointments */
-    const appointments = await Appointment.find({
-      patient: patient._id,
-    })
+    const appointments = await Appointment.find({ patient: patient._id })
       .populate({
         path: 'doctor',
-        populate: {
-          path: 'user',
-          select: 'name email',
-        },
+        populate: { path: 'user', select: 'name email' },
       })
       .sort({ date: -1 });
 
@@ -87,9 +78,7 @@ export const getDoctorAppointments = async (req, res) => {
       return res.status(404).json({ message: 'Doctor profile not found' });
     }
 
-    const appointments = await Appointment.find({
-      doctor: doctor._id,
-    })
+    const appointments = await Appointment.find({ doctor: doctor._id })
       .populate({
         path: 'patient',
         populate: { path: 'user', select: 'name email' },
@@ -110,6 +99,11 @@ export const updateAppointmentStatus = async (req, res) => {
     }
 
     const { status } = req.body;
+    const allowedStatuses = ['CONFIRMED', 'CANCELLED'];
+
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value' });
+    }
 
     const doctor = await Doctor.findOne({ user: req.user.id });
     if (!doctor) {

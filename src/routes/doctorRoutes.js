@@ -1,20 +1,20 @@
 import express from 'express';
 import {
   getApprovedDoctors,
-  getDoctorById,
-  updateDoctorProfile,
   getDoctorProfile,
+  updateDoctorProfile,
+  getDoctorById,
 } from '../controllers/doctorController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
+/* Public / Patient */
 router.get('/', protect, getApprovedDoctors);
-
-/* 🔹 SELF EDIT PROFILE */
-router.get('/profile', protect, getDoctorProfile);
-router.put('/profile/update', protect, updateDoctorProfile);
-
 router.get('/:id', protect, getDoctorById);
+
+/* Doctor */
+router.get('/profile/me', protect, getDoctorProfile);
+router.put('/profile/update', protect, updateDoctorProfile);
 
 export default router;

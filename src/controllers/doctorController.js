@@ -1,12 +1,11 @@
 import Doctor from '../models/Doctor.js';
-import User from '../models/User.js';
 
 /* ================= GET ALL APPROVED DOCTORS ================= */
 export const getApprovedDoctors = async (req, res) => {
   try {
     const doctors = await Doctor.find({ isApproved: true })
-      .populate('user', 'name email') // basic user info
-      .select('specialization experience rating isAvailable clinicAddress qualifications');
+      .populate('user', 'name email')
+      .select('specialization experience rating isAvailable location qualifications');
 
     const formatted = doctors.map((doc) => ({
       _id: doc._id,
@@ -16,7 +15,7 @@ export const getApprovedDoctors = async (req, res) => {
       experience: doc.experience,
       rating: doc.rating,
       isAvailable: doc.isAvailable,
-      location: doc.clinicAddress,
+      location: doc.location,
       qualifications: doc.qualifications,
     }));
 
@@ -48,7 +47,7 @@ export const getDoctorProfile = async (req, res) => {
       bio: doctor.bio,
       qualifications: doctor.qualifications,
       isAvailable: doctor.isAvailable,
-      location: doctor.clinicAddress,
+      location: doctor.location,
       rating: doctor.rating,
       isApproved: doctor.isApproved,
     });
@@ -57,7 +56,7 @@ export const getDoctorProfile = async (req, res) => {
   }
 };
 
-/* ================= GET SINGLE DOCTOR PROFILE ================= */
+/* ================= GET SINGLE DOCTOR (PATIENT VIEW) ================= */
 export const getDoctorById = async (req, res) => {
   try {
     const doctor = await Doctor.findOne({
@@ -79,7 +78,7 @@ export const getDoctorById = async (req, res) => {
       isAvailable: doctor.isAvailable,
       bio: doctor.bio,
       qualifications: doctor.qualifications,
-      location: doctor.clinicAddress,
+      location: doctor.location,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -94,7 +93,6 @@ export const updateDoctorProfile = async (req, res) => {
     }
 
     const doctor = await Doctor.findOne({ user: req.user.id });
-
     if (!doctor) {
       return res.status(404).json({ message: 'Doctor profile not found' });
     }
@@ -105,11 +103,16 @@ export const updateDoctorProfile = async (req, res) => {
     if (experience !== undefined) doctor.experience = experience;
     if (isAvailable !== undefined) doctor.isAvailable = isAvailable;
     if (bio !== undefined) doctor.bio = bio;
-    if (qualifications !== undefined)
+
+    if (qualifications !== undefined) {
       doctor.qualifications = Array.isArray(qualifications)
         ? qualifications
         : qualifications.split(',').map((q) => q.trim());
-    if (location !== undefined) doctor.clinicAddress = location;
+    }
+
+    if (location?.city && location?.state) {
+      doctor.location = location;
+    }
 
     await doctor.save();
 
