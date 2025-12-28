@@ -2,7 +2,6 @@ import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema(
   {
-    /* ================= COMMON FIELDS ================= */
     name: {
       type: String,
       required: true,
@@ -15,6 +14,7 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
+      index: true,
     },
 
     password: {
@@ -28,13 +28,11 @@ const userSchema = new mongoose.Schema(
       default: 'PATIENT',
     },
 
-    /* ================= DOCTOR APPROVAL ================= */
     isApproved: {
       type: Boolean,
       default: false,
     },
 
-    /* ================= DOCTOR PROFILE ================= */
     specialization: {
       type: String,
       default: 'General Physician',
@@ -42,8 +40,8 @@ const userSchema = new mongoose.Schema(
 
     experience: {
       type: Number,
-      default: 1,
       min: 0,
+      default: 1,
     },
 
     rating: {
@@ -63,20 +61,15 @@ const userSchema = new mongoose.Schema(
       required: function () {
         return this.role === 'DOCTOR';
       },
+      trim: true,
+      match: [/^\d{10}$/, 'Phone number must be exactly 10 digits'],
     },
 
     location: {
-      city: {
-        type: String,
-        default: '',
-      },
-      state: {
-        type: String,
-        default: '',
-      },
+      city: { type: String, default: '' },
+      state: { type: String, default: '' },
     },
 
-    /* ================= OPTIONAL EXTENSIONS ================= */
     bio: {
       type: String,
       default: '',
@@ -87,9 +80,7 @@ const userSchema = new mongoose.Schema(
       default: [],
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 export default mongoose.model('User', userSchema);
