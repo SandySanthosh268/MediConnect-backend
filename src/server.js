@@ -23,7 +23,7 @@ const app = express();
 app.use(cors());
 app.use(
   cors({
-    origin: ['http://localhost:5173', 'https://YOUR_FRONTEND_URL.vercel.app'],
+    origin: ['http://localhost:5173', 'https://medi-connect-frontend-tan.vercel.app/'],
     credentials: true,
   })
 );
