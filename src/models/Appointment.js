@@ -1,17 +1,36 @@
 import mongoose from 'mongoose';
-import { type } from 'os';
 
 const appointmentSchema = new mongoose.Schema(
   {
-    patient: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    doctor: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    date: Date,
+    patient: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+
+    doctor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+
+    date: {
+      type: Date,
+      required: true,
+    },
+
     status: {
       type: String,
       enum: ['PENDING', 'CONFIRMED', 'CANCELLED'],
       default: 'PENDING',
     },
-    documents: [{type:String}],
+
+    cancelReason: {
+      type: String,
+      default: '',
+    },
+
+    documents: [{ type: String }],
   },
   { timestamps: true }
 );

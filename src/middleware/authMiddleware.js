@@ -15,17 +15,16 @@ export const protect = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // ✅ Fetch user from DB
-    const user = await User.findById(decoded.id).select('_id role');
+    const user = await User.findById(decoded.id).select('_id role isApproved');
 
     if (!user) {
       return res.status(401).json({ message: 'User not found' });
     }
 
-    // ✅ Attach clean user object
     req.user = {
-      id: user._id,
+      id: user._id.toString(),
       role: user.role,
+      isApproved: user.isApproved,
     };
 
     next();
